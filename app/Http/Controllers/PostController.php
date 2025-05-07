@@ -12,7 +12,8 @@ class PostController extends Controller
 
     public function index()
     {
-        $posts = Post::with('user')->get();
+        $posts = Post::with(['user', 'affectedType'])->get();
+
 
         return response()->json([
             'success' => true,
@@ -26,12 +27,23 @@ class PostController extends Controller
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'image' => 'nullable',
             'user_id' => 'required|exists:users,id',
+            'affectedtype_id' => 'required|exists:affected_types,id',
         ]);
     
-        $post = Post::create($validatedData);
-        event(new PostCreated($post));
-    
+        $image = $request->file('image');
+        $imgFileName = time() . '.' . $request->file('image')->getClientOriginalExtension();
+        $imgPath = 'images/posts/' . $imgFileName;
+        $image->move(public_path('images/posts'), $imgPath);
+        $post = new Post();
+        $post->title = $validatedData['title'];
+        $post->content = $validatedData['content'];
+        $post->user_id = $validatedData['user_id'];
+        $post->affectedtype_id = $validatedData['affectedtype_id'];
+        $post->image = $imgPath;
+        $post->save();
+        
         return response()->json([
             'success' => true,
             'data' => $post,

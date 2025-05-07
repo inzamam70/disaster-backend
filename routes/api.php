@@ -1,20 +1,33 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AffectedTypeController;
 use App\Http\Controllers\AidController;
 use App\Http\Controllers\Auth\AuthenticatedApiController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CenterController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\DonationController;
+use App\Http\Controllers\FundController;
 use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\LandingcardController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NavController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleNavItemController;
 use App\Http\Controllers\SliderController;
+use App\Http\Controllers\TrainingCenterController;
+use App\Http\Controllers\TransectionController;
+use App\Http\Controllers\VolunteerLogController;
+use App\Http\Controllers\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +42,11 @@ use App\Http\Controllers\SliderController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/donations', [DonationController::class, 'create']);
+    Route::get('/donations', [DonationController::class, 'index']);
 });
 
 Route::prefix('users')->group(function () {
@@ -89,6 +107,8 @@ Route::prefix('role-navitems')->group(function () {
     Route::delete('/{id}', [RoleNavitemController::class, 'destroy']);
 });
 
+Route::get('user/role-nav-items/{role_id}', [RoleNavItemController::class, 'userRoleNavItems']);
+
 Route::prefix('aids')->group(function () {
     Route::get('/', [AidController::class, 'index']);
     Route::post('/', [AidController::class, 'create']);
@@ -124,10 +144,103 @@ Route::prefix('abouts')->group(function () {
     Route::delete('/{id}', [AboutController::class, 'destroy']);
 });
 
+Route::prefix('affectedtypes')->group(function () {
+    Route::get('/', [AffectedTypeController::class, 'index']);
+    Route::post('/', [AffectedTypeController::class, 'create']);
+    Route::put('/{id}', [AffectedTypeController::class, 'update']);
+    Route::get('/{id}', [AffectedTypeController::class, 'show']);
+    Route::delete('/{id}', [AffectedTypeController::class, 'destroy']);
+});
+
+Route::prefix('activities')->group(function () {
+    Route::get('/', [ActivityController::class, 'index']);
+    Route::post('/', [ActivityController::class, 'create']);
+    Route::put('/{id}', [ActivityController::class, 'update']);
+    Route::get('/{id}', [ActivityController::class, 'show']);
+    Route::delete('/{id}', [ActivityController::class, 'destroy']);
+});
+
 Route::prefix('massages')->group(function () {
     Route::get('/', [MessageController::class, 'index']);
     Route::post('/', [MessageController::class, 'sendMassage']);
 });
+
+
+Route::prefix('funds')->group(function (){
+    Route::get('/', [FundController::class, 'index']);
+});
+
+Route::prefix('transections')->group(function(){
+    Route::get('/', [TransectionController::class, 'index']);
+    Route::post('/', [TransectionController::class, 'create']);
+    Route::put('/{id}', [TransectionController::class, 'update']);
+    Route::get('/{id}', [TransectionController::class, 'show']);
+    Route::delete('/{id}', [TransectionController::class, 'destroy']);
+});
+
+Route::prefix('centers')->group(function () {
+    Route::get('/', [CenterController::class, 'index']);
+    Route::post('/', [CenterController::class, 'create']);
+    Route::put('/{id}', [CenterController::class, 'update']);
+    Route::get('/{id}', [CenterController::class, 'show']);
+    Route::delete('/{id}', [CenterController::class, 'destroy']);
+});
+
+Route::prefix('tcenters')->group(function () {
+    Route::get('/', [TrainingCenterController::class, 'index']);
+    Route::post('/', [TrainingCenterController::class, 'create']);
+    Route::put('/{id}', [TrainingCenterController::class, 'update']);
+    Route::get('/{id}', [TrainingCenterController::class, 'show']);
+    Route::delete('/{id}', [TrainingCenterController::class, 'destroy']);
+});
+
+Route::prefix('products')->group(function () {
+    Route::get('/', [ProductController::class, 'index']);
+    Route::post('/', [ProductController::class, 'create']);
+    Route::put('/{id}', [ProductController::class, 'update']);
+    Route::get('/{id}', [ProductController::class, 'show']);
+    Route::delete('/{id}', [ProductController::class, 'destroy']);
+});
+
+Route::prefix('wishlists')->group(function () {
+    Route::get('/{userId}', [WishlistController::class, 'index']);
+    Route::post('/', [WishlistController::class, 'store']);
+    Route::put('/{id}', [WishlistController::class, 'update']);
+    Route::get('/{id}', [WishlistController::class, 'show']);
+    Route::delete('/{id}', [WishlistController::class, 'destroy']);
+});
+
+Route::prefix('carts')->group(function () {
+    Route::get('/{userId}', [CartController::class, 'index']);
+    Route::post('/', [CartController::class, 'create']);
+    Route::put('/{id}', [CartController::class, 'update']);
+    Route::get('/{id}', [CartController::class, 'show']);
+    Route::delete('/{id}', [CartController::class, 'destroy']);
+});
+
+Route::prefix('courses')->group(function () {
+    Route::get('/', [CourseController::class, 'index']);
+    Route::post('/', [CourseController::class, 'create']);
+    Route::put('/{id}', [CourseController::class, 'update']);
+    Route::get('/{id}', [CourseController::class, 'show']);
+    Route::delete('/{id}', [CourseController::class, 'delete']);
+});
+
+Route::prefix('payment')->group(function () {
+    Route::get('/{userId}', [PaymentController::class, 'index']);
+    Route::post('/', [PaymentController::class, 'store']);
+    Route::put('/{id}', [PaymentController::class, 'update']);
+    Route::get('/{id}', [PaymentController::class, 'show']);
+    Route::delete('/{id}', [PaymentController::class, 'destroy']);
+    Route::post('/status/{id}', [PaymentController::class, 'updateStatus']);
+
+});
+
+Route::get('payments/alldata', [PaymentController::class, 'alldata']);
+
+Route::post('/volunteer/clock-in', [VolunteerLogController::class, 'clockIn']);
+Route::post('/volunteer/clock-out', [VolunteerLogController::class, 'clockOut']);
+Route::get('/volunteer/logs/{user_id}/{center_id}', [VolunteerLogController::class, 'getLogs']);
 
 Route::post('/register', [AuthenticatedApiController::class, 'register'])->middleware('guest:api');
 Route::post('/login', [AuthenticatedApiController::class, 'login'])->middleware('guest:api');

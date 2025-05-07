@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Landingcard extends Model
 {
     use HasFactory;
-    protected $fillable = [
+    protected $with = array('affectedType');
+    protected  $fillable = [
         'title',
         'description',
         'image',
-        'affected_type',
+        'affectedtype_id',
+        'latitude',
+        'longitude'
     ];
+
+    public function affectedType()
+    {
+        return $this->belongsTo(AffectedType::class, 'affectedtype_id');
+    }
 
 }

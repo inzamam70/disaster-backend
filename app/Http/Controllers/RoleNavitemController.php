@@ -26,38 +26,72 @@ class RoleNavItemController extends Controller
     /**
      * Store a newly created role nav item in storage.
      */
+    // public function create(Request $request)
+    // {
+    //     // Validate incoming request
+    //     $request->validate([
+    //         'roleId' => 'required|exists:roles,id',
+    //         'navItemIds' => 'required|array', // Ensure navItemIds is an array
+    //         'navItemIds.*' => 'exists:navs,id', // Each item in the array must exist in navs table
+    //     ]);
+    
+    //     $roleId = $request->roleId;
+    //     $navItemIds = $request->navItemIds;
+    
+    //     // Store each nav item with the role
+    //     $roleNavItems = [];
+    //     foreach ($navItemIds as $navId) {
+    //         $roleNavItems[] = RoleNavitem::create([
+    //             'role_id' => $roleId,
+    //             'nav_id' => $navId,
+    //         ]);
+    //     }
+    
+    //     return response()->json(
+    //         [
+    //             'success' => true,
+    //             'data' => $roleNavItems,
+    //             'message' => 'RoleNavItems created successfully',
+    //         ],
+    //         201
+    //     ); // Return newly created RoleNavItems
+    // }
+    
     public function create(Request $request)
     {
         // Validate incoming request
         $request->validate([
             'roleId' => 'required|exists:roles,id',
-            'navItemIds' => 'required|array', // Ensure navItemIds is an array
-            'navItemIds.*' => 'exists:navs,id', // Each item in the array must exist in navs table
+            'navItemIds' => 'required|array',
+            'navItemIds.*' => 'exists:navs,id',
         ]);
     
         $roleId = $request->roleId;
         $navItemIds = $request->navItemIds;
     
-        // Store each nav item with the role
+        // Get the current nav items associated with this role
+        $existingNavItems = RoleNavitem::where('role_id', $roleId)->pluck('nav_id')->toArray();
+    
+        // Filter out already existing nav items that are selected
+        $newNavItemIds = array_diff($navItemIds, $existingNavItems);
+    
+        // Store the new nav items for this role
         $roleNavItems = [];
-        foreach ($navItemIds as $navId) {
+        foreach ($newNavItemIds as $navId) {
             $roleNavItems[] = RoleNavitem::create([
                 'role_id' => $roleId,
                 'nav_id' => $navId,
             ]);
         }
     
-        return response()->json(
-            [
-                'success' => true,
-                'data' => $roleNavItems,
-                'message' => 'RoleNavItems created successfully',
-            ],
-            201
-        ); // Return newly created RoleNavItems
+        return response()->json([
+            'success' => true,
+            'data' => $roleNavItems,
+            'message' => 'RoleNavItems updated successfully',
+        ], 201);
     }
     
-
+    
     /**
      * Display the specified role nav item.
      */
@@ -132,5 +166,19 @@ class RoleNavItemController extends Controller
         }
 
         return response()->json(['message' => 'RoleNavItem not found'], 404);
+    }
+
+    public function userRoleNavItems($roleId)
+    {
+       
+        $navItems = RoleNavitem::where('role_id', $roleId)->with('nav')->get();
+
+        return response()->json(
+            [
+                'success' => true,
+                'data' => $navItems,
+                'message' => 'User role nav items fetched successfully'
+            ]
+        );
     }
 }

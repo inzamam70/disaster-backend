@@ -15,7 +15,7 @@ class UserController extends Controller
     {
         // Fetch all users
         $users = User::with('activeRole')->get();
-       
+
         $totalUser = count($users->where('active_role_id', 2));
         $totalVolunteer = count($users->where('active_role_id', 3));
 
@@ -41,6 +41,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+
         ]);
 
         // Create a new user
@@ -59,6 +60,8 @@ class UserController extends Controller
             ],
              201); // Return newly created user
     }
+
+
 
     /**
      * Display the specified resource.
@@ -84,39 +87,94 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    // public function update(Request $request, $id)
+    // {
+    //     // Validate incoming request
+    //     $request->validate([
+    //         'name' => 'sometimes|string|max:255',
+    //         'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
+    //         'password' => 'sometimes|string|min:8',
+    //     ]);
+
+    //     // Find the user by ID
+    //     $user = User::find($id);
+
+    //     if ($user) {
+    //         // Update user details
+    //         $user->name = $request->name ?? $user->name;
+    //         $user->email = $request->email ?? $user->email;
+    //         $user->phone = $request->phone ?? $user->phone;
+    //         $user->address = $request->address ?? $user->address;
+    //         $user->profession = $request->profession ?? $user->profession;
+    //         $image = $request->file('image');
+    //         if ($image) {
+    //             $imgFileName = time() . '.' . $request->file('image')->getClientOriginalExtension();
+    //             $imgPath = 'images/users/' . $imgFileName;
+    //             $image->move(public_path('images/users'), $imgPath);
+    //             $user->image = $imgPath;
+    //         }
+    //         // If password is provided, hash it and update
+    //         if ($request->password) {
+    //             $user->password = Hash::make($request->password); // Hash password
+    //         }
+    //         $user->save();
+
+
+
+    //         return response()->json(
+    //             [
+    //                 'success' => true,
+    //                 'data' => $user,
+    //                 'message' => 'User updated successfully'
+    //             ]
+    //         );
+    //     }
+
+    //     return response()->json(['message' => 'User not found'], 404);
+
+
+    // }
+
     public function update(Request $request, $id)
-    {
-        // Validate incoming request
-        $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'sometimes|string|min:8',
-        ]);
+{
+    $request->validate([
+        'name' => 'sometimes|string|max:255',
+        'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
+        'password' => 'sometimes|string|min:8',
+    ]);
 
-        // Find the user by ID
-        $user = User::find($id);
+    $user = User::find($id);
 
-        if ($user) {
-            // Update user attributes
-            $user->update([
-                'name' => $request->name ?? $user->name,
-                'email' => $request->email ?? $user->email,
-                'password' => $request->password ? Hash::make($request->password) : $user->password,
-            ]);
+    if ($user) {
+        $user->name = $request->name ?? $user->name;
+        $user->email = $request->email ?? $user->email;
+        $user->phone = $request->phone ?? $user->phone;
+        $user->address = $request->address ?? $user->address;
+        $user->profession = $request->profession ?? $user->profession;
 
-            return response()->json(
-                [
-                    'success' => true,
-                    'data' => $user,
-                    'message' => 'User updated successfully'
-                ]
-            );
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imgFileName = time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('images/users'), $imgFileName);
+            $user->image = 'images/users/' . $imgFileName;
         }
 
-        return response()->json(['message' => 'User not found'], 404);
+        if ($request->password) {
+            $user->password = Hash::make($request->password);
+        }
 
+        $user->save();
 
+        return response()->json([
+            'success' => true,
+            'data' => $user, // important
+            'message' => 'User updated successfully',
+        ]);
     }
+
+    return response()->json(['message' => 'User not found'], 404);
+}
+
     
     public function assignRole(Request $request, $id)
     {

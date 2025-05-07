@@ -32,7 +32,7 @@ class AuthenticatedApiController extends Controller
                 'login'    => 'required',
                 'password' => 'required',
             ]);
-            $validator->setAttributeNames(['login' => 'Email or Phone']); 
+            $validator->setAttributeNames(['login' => 'Email or Phone']);
 
             $this->checkValidation($validator);
 
@@ -45,11 +45,11 @@ class AuthenticatedApiController extends Controller
             if (!User::where($loginField, $credentials[$loginField])->exists()) {
                 if (filter_var($credentials[$loginField], FILTER_VALIDATE_EMAIL)) {
                     throw new Exception("Email Not Registered.", 400);
-                } else{ // Assuming  phone number
+                } else { // Assuming  phone number
                     throw new Exception("Phone Number Not Registered.", 400);
                 }
             }
-            
+
 
             if (!Auth::attempt($credentials)) {
                 throw new Exception("Invalid password.", 400);
@@ -58,14 +58,13 @@ class AuthenticatedApiController extends Controller
             // $token = Auth::user()->createToken('api auth token')->accessToken;
             $token = Auth::user()->createToken('api auth token')->accessToken;
 
-        
+
             $user = User::where('id', Auth::user()->id)->first();
-                return response()->json([
-                    'success'             => true,
-                    'access_token'        => $token,
-                    'user'                => $user,
-                ], 200);
-            
+            return response()->json([
+                'success'             => true,
+                'access_token'        => $token,
+                'user'                => $user,
+            ], 200);
         } catch (Exception $e) {
             return response()->json($this->catchException($e), $this->exceptionCode($e));
         }
@@ -73,107 +72,126 @@ class AuthenticatedApiController extends Controller
 
     public function verifyLogin(Request $request)
     {
-        try 
-        {
+        try {
             $req = $request->all();
             $validator = Validator::make($req, [
                 'email'    => 'required|email',
                 'password' => 'required',
             ]);
             $this->checkValidation($validator);
-            if(!Auth::attempt($req))
+            if (!Auth::attempt($req))
                 throw new Exception("Credentials Mismatch", 400);
             return response()->json([
                 'success'      => true,
                 'user'         => Auth::user()
             ], 200);
-        } 
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json($this->catchException($e), $this->exceptionCode($e));
         }
     }
 
+
+
     public function register(Request $request)
     {
-        try 
-        {
-            $req       = $request->all();
-            
-            $validator = Validator::make($req, [
+        try {
+            // Validate the request
+            $validator = Validator::make($request->all(), [
                 'name'     => 'required|string|max:255',
                 'email'    => 'required|string|email|max:255|unique:users',
                 'password' => ['required', 'confirmed', Rules\Password::min(8)],
+                'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate image file
             ]);
-            $this->checkValidation($validator);
-    
-            $user = User::create([
-                'name'           => $req['name'],
-                'email'          => $req['email'],
-                'phone'          => $req['phone'] ?? null,
-                'address'        => $req['address'] ?? null,
-                'profession'     => $req['profession'] ?? null,
-                'password'       => Hash::make($req['password']),
-                'active_role_id' => $req['active_role_id'] ?? null,
 
+            $this->checkValidation($validator);
+
+            // Handle image upload
+            $imgPath = null;
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imgFileName = time() . '.' . $image->getClientOriginalExtension();
+                $imgPath = 'images/users/' . $imgFileName;
+                $image->move(public_path('images/users'), $imgFileName); // Save the image to the public directory
+            }
+
+            // Create a new user
+            $user = User::create([
+                'name'           => $request->name,
+                'email'          => $request->email,
+                'phone'          => $request->phone ?? null,
+                'address'        => $request->address ?? null,
+                'profession'     => $request->profession ?? null,
+                'image'          => $imgPath, // Save the image path to the database
+                'password'       => Hash::make($request->password),
+                'active_role_id' => $request->active_role_id ?? null,
             ]);
-            // $user->roles()->attach([5]);
 
             return response()->json([
                 'success' => true,
                 'data'    => $user,
-                'message'     => 'User Created Successfully'
+                'message' => 'User Created Successfully'
             ], 201);
-        } 
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json($this->catchException($e), $this->exceptionCode($e));
         }
     }
 
     public function logout(Request $request)
     {
-        $request->user()->token()->revoke();
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ]);
-    }
-
-    public function refreshToken(Request $request)
-    {
-        try 
-        {
-            $token = Auth::user()->createToken('api auth token')->accessToken;
-            $customer = Customer::where('user_id', Auth::user()->id)->first();
-            $vehicle = CustomerVehicle::with('vehicle')->where('customer_id', $customer->id)->first();
-
-            $vehicles = CustomerVehicle::with('vehicle')->where('customer_id', $customer->id)->get();
-
-            $user = User::with('customer')->where('id', Auth::user()->id)->first();
-            $user['image_path'] = $user->customer->individual->graphic != null ? 'storage/sales-customer/customers/'.$user->customer->individual->graphic->unique_name : null;
-            if (is_null($vehicle)) {
-                return response()->json([
-                    'success'             => true,
-                    'access_token'        => $token,
-                    'user'                => $user,
-                    'graphic'             => $user->customer->individual->graphic ?? null,
-                    'is_vehicle_update'   => false
-                ], 200);
-            } else {
-                return response()->json([
-                    'success'             => true,
-                    'access_token'        => $token,
-                    'user'                => $user,
-                    'graphic'             => $user->customer->individual->graphic ?? null,
-                    'is_vehicle_update'   => true,
-                    'vehicles'            => $vehicles
-                ], 200);
-            }
-            
-            
-        } 
-        catch (Exception $e) {
-            return response()->json($this->catchException($e), $this->exceptionCode($e));
+        if (Auth::user()) {
+            $request->user()->token()->revoke();
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully logged out'
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
         }
-
-        
     }
+
+
+     
+
+    // public function refreshToken(Request $request)
+    // {
+    //     try 
+    //     {
+    //         $token = Auth::user()->createToken('api auth token')->accessToken;
+    //         $customer = Customer::where('user_id', Auth::user()->id)->first();
+    //         $vehicle = CustomerVehicle::with('vehicle')->where('customer_id', $customer->id)->first();
+
+    //         $vehicles = CustomerVehicle::with('vehicle')->where('customer_id', $customer->id)->get();
+
+    //         $user = User::with('customer')->where('id', Auth::user()->id)->first();
+    //         $user['image_path'] = $user->customer->individual->graphic != null ? 'storage/sales-customer/customers/'.$user->customer->individual->graphic->unique_name : null;
+    //         if (is_null($vehicle)) {
+    //             return response()->json([
+    //                 'success'             => true,
+    //                 'access_token'        => $token,
+    //                 'user'                => $user,
+    //                 'graphic'             => $user->customer->individual->graphic ?? null,
+    //                 'is_vehicle_update'   => false
+    //             ], 200);
+    //         } else {
+    //             return response()->json([
+    //                 'success'             => true,
+    //                 'access_token'        => $token,
+    //                 'user'                => $user,
+    //                 'graphic'             => $user->customer->individual->graphic ?? null,
+    //                 'is_vehicle_update'   => true,
+    //                 'vehicles'            => $vehicles
+    //             ], 200);
+    //         }
+
+
+    //     } 
+    //     catch (Exception $e) {
+    //         return response()->json($this->catchException($e), $this->exceptionCode($e));
+    //     }
+
+
+    // }
 }

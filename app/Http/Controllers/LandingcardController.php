@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\LandingCard\LandinCardCollection;
+use App\Http\Resources\LandingCard\LandinCardResource;
 use App\Models\Landingcard;
 use Illuminate\Http\Request;
 
@@ -10,10 +12,11 @@ class LandingcardController extends Controller
     //
     public function index()
     {
-        $landingcards = Landingcard::all();
+
+        $landingcards = Landingcard::all(); 
         return response()->json([
             'success' => true,
-            'data' => $landingcards,
+            'data' => LandinCardResource::collection($landingcards),
             'message' => 'Landingcard fetched successfully'
         ]);
     }
@@ -24,7 +27,9 @@ class LandingcardController extends Controller
             'title' => 'required|max:255',
             'description' => 'required',
             'image' => 'required',
-            'affected_type' => 'required'
+            'affectedtype_id' => 'required|exists:affected_types,id',
+            'latitude' => 'required',
+            'longitude' => 'required'
         ]);
 
         $image = $request->file('image');
@@ -35,7 +40,9 @@ class LandingcardController extends Controller
         $landingcard = new Landingcard();
         $landingcard->title = $validatedData['title'];
         $landingcard->description = $validatedData['description'];
-        $landingcard->affected_type = $validatedData['affected_type'];
+        $landingcard->affectedtype_id = $validatedData['affectedtype_id'];
+        $landingcard->latitude = $validatedData['latitude'];
+        $landingcard->longitude = $validatedData['longitude'];
         $landingcard->image = $imgPath;
         $landingcard->save();
 
